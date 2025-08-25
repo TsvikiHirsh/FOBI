@@ -29,15 +29,15 @@ close(h);
     
 function img=ReadImg(filemask,ind,ext)
 if ind<10
-    filename=[filemask '000' num2str(ind) ext];
+    filename=[filemask '0000' num2str(ind) ext];
 else
     if ind<100
-        filename=[filemask '00' num2str(ind) ext];
+        filename=[filemask '000' num2str(ind) ext];
     else
         if ind<1000
-            filename=[filemask '0' num2str(ind) ext];
+            filename=[filemask '00' num2str(ind) ext];
         else 
-            filename=[filemask num2str(ind) ext];
+            filename=[filemask '0' num2str(ind) ext];
         end
     end
 end

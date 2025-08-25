@@ -1,6 +1,6 @@
 function [spectrum, unc] = SpectrumRoi(data, roi, method)
     if nargin < 3
-        method = 'mean';
+        method = 'median';
     end
     
     roi = double(roi);
