@@ -1,0 +1,68 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fobi"
+version = "1.0.0"
+description = "Full-spectrum Bragg edge transmission imaging for neutron time-of-flight data"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "MIT"}
+authors = [
+    {name = "FOBI Development Team"}
+]
+keywords = ["neutron imaging", "bragg edge", "time-of-flight", "materials science"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Scientific/Engineering :: Physics",
+]
+
+dependencies = [
+    "numpy>=1.24.0",
+    "scipy>=1.10.0",
+    "matplotlib>=3.7.0",
+    "streamlit>=1.28.0",
+    "tqdm>=4.65.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-cov>=4.1.0",
+]
+fits = [
+    "astropy>=5.3.0",
+]
+viz = [
+    "plotly>=5.17.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/your-org/fobi"
+Documentation = "https://github.com/your-org/fobi/blob/main/README.md"
+Repository = "https://github.com/your-org/fobi"
+"Bug Tracker" = "https://github.com/your-org/fobi/issues"
+Publication = "https://www.nature.com/articles/s41598-020-71705-4"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["fobi*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --cov=fobi --cov-report=html --cov-report=term"
+
+[tool.coverage.run]
+source = ["fobi"]
+omit = ["*/tests/*", "*/test_*.py"]

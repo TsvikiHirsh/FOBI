@@ -1,0 +1,25 @@
+# FOBI: Full-spectrum Bragg edge transmission imaging
+# Python package requirements
+
+# Core scientific computing
+numpy>=1.24.0
+scipy>=1.10.0
+
+# Data visualization
+matplotlib>=3.7.0
+
+# Web application
+streamlit>=1.28.0
+
+# Progress bars and UI
+tqdm>=4.65.0
+
+# Testing
+pytest>=7.4.0
+pytest-cov>=4.1.0
+
+# Optional: Image I/O (for FITS files)
+astropy>=5.3.0
+
+# Optional: Advanced visualization
+plotly>=5.17.0
