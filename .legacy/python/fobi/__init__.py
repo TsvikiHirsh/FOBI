@@ -28,6 +28,5 @@ __license__ = "MIT"
 from . import reduction
 from . import edge_fitting
 from . import utils
-from .workflow import Workflow, ReconstructionResult
 
-__all__ = ["reduction", "edge_fitting", "utils", "Workflow", "ReconstructionResult"]
+__all__ = ["reduction", "edge_fitting", "utils"]
