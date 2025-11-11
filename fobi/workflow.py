@@ -209,6 +209,8 @@ class Workflow:
         self._signal_processed = None
         self._openbeam_processed = None
         self._time_processed = None
+        self._tmax = None
+        self._nrep = None
 
         self._chopper_response = None
         self._chopper_id = None
@@ -320,6 +322,10 @@ class Workflow:
         if self._signal_raw is None:
             raise ValueError("No data loaded. Call load() or load_arrays() first.")
 
+        # Store tmax and nrep for wavelength calculation
+        self._tmax = tmax
+        self._nrep = nrep
+
         # Process signal and openbeam
         self._signal_processed, self._time_processed = interpolate_noreadoutgaps(
             self._signal_raw, self._time_raw, tmax, nrep, plot_flag=plot
@@ -422,9 +428,13 @@ class Workflow:
         # Calculate wavelength if L is provided
         wavelength = None
         if self._L is not None:
-            # λ = h*t/(m*L) where h/m = 3.956 for neutrons
-            # λ (Å) = 3956 * t (ms) / L (m)
-            wavelength = 3.956 * (self._time_processed / 1000) / self._L
+            # After merging repetitions, time_processed represents one chopper period
+            # The period goes from 0 to tmax/nrep, but the spectrum spans 0 to tmax
+            # So we scale the time to represent the full range
+            # λ (Å) = 3.956 * t (ms) / L (m)
+            # Scale time: multiply by nrep to get full time range
+            time_for_wavelength = self._time_processed * self._nrep if self._nrep else self._time_processed
+            wavelength = 3.956 * (time_for_wavelength / 1000) / self._L
 
         # Create result object
         self._result = ReconstructionResult(

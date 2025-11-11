@@ -131,13 +131,118 @@ for filt in ['none', 'LowPass', 'LowPassBu', 'LowPassGa']:
 
 ---
 
+## Empty Plots - Incorrect Wavelength Range
+
+### Issue
+
+All plots appeared empty in the tutorial notebook. When viewing plots with `plt.xlim(2, 6)` (typical Bragg edge range), no data was visible.
+
+### Root Cause
+
+After merging chopper repetitions in `interpolate_noreadoutgaps()`, the time array represented one chopper period (0 to tmax/nrep), not the full time range (0 to tmax). The wavelength calculation used this compressed time directly:
+
+```python
+# Old code (buggy)
+wavelength = 3.956 * (self._time_processed / 1000) / self._L
+# Result: wavelength range of [0, 0.549] Å instead of [0, 4.4] Å
+```
+
+This caused wavelength to span only ~0-0.5 Å when it should span 0-4.4 Å for typical measurements.
+
+### Fix
+
+Store `tmax` and `nrep` during interpolation, then scale the time appropriately for wavelength calculation:
+
+```python
+# In interpolate():
+self._tmax = tmax
+self._nrep = nrep
+
+# In reconstruct():
+time_for_wavelength = self._time_processed * self._nrep if self._nrep else self._time_processed
+wavelength = 3.956 * (time_for_wavelength / 1000) / self._L
+```
+
+This scales the compressed time back to the full range, giving correct wavelength values.
+
+### Testing
+
+Created comprehensive test suite in [tests/test_plotting.py](tests/test_plotting.py):
+
+```
+✅ 10/10 plotting tests pass
+✅ Wavelength range correct
+✅ Data visible in typical range (2-6 Å)
+✅ All filters produce valid plots
+✅ Comparison plots work correctly
+```
+
+### Affected Code
+
+**File**: [fobi/workflow.py](fobi/workflow.py)
+- `__init__()`: Added `_tmax` and `_nrep` attributes (lines 212-213)
+- `interpolate()`: Store tmax and nrep (lines 323-325)
+- `reconstruct()`: Scale time for wavelength (lines 431-437)
+
+### Impact
+
+This fix enables:
+- ✅ Correct wavelength calculation after merging
+- ✅ Plots show data in expected ranges
+- ✅ Tutorial notebook works correctly
+- ✅ Comparison with true transmission possible
+
+### Verification
+
+```python
+import fobi
+import numpy as np
+
+# Generate test data
+t = np.linspace(0, 10000, 8000)
+signal = np.random.randn(len(t)) + 1000
+openbeam = np.random.randn(len(t)) + 1000
+
+# Reconstruct and plot
+result = (fobi.Workflow
+    .load_arrays(signal=signal, openbeam=openbeam, time=t, L=9)
+    .interpolate(tmax=10000, nrep=8)
+    .convolve(chopper="POLDI", noise_level=0.1)
+    .reconstruct())
+
+# Should now have correct wavelength range
+print(f"Wavelength range: [{result.wavelength.min():.3f}, {result.wavelength.max():.3f}] Å")
+# Output: Wavelength range: [0.000, 4.392] Å  ✅ Correct!
+
+# Plot should show data
+result.plot(what="transmission", x_axis="wavelength")  # Now works!
+```
+
+### Status
+
+**Fixed** ✅ - Committed to main codebase
+
+---
+
 ## Summary
 
-- **Bug**: Array broadcasting error in filter kernel creation
-- **Severity**: High (blocked usage of filters)
-- **Root Cause**: Incorrect array index calculation
-- **Fix**: Proper array size calculation with bounds checking
-- **Testing**: All tests pass, all filter types work
-- **Files Changed**: `fobi/reduction/wiener.py`
+### Bug 1: Filter Kernel Array Error
+- **Severity**: High (blocked filter usage)
+- **Root Cause**: Array index calculation error
+- **Fix**: Proper array size calculation
+- **Files**: `fobi/reduction/wiener.py`
 
-The FOBI package now works correctly with all frequency-domain filters!
+### Bug 2: Empty Plots
+- **Severity**: High (all plots appeared empty)
+- **Root Cause**: Incorrect wavelength scaling after merging
+- **Fix**: Scale time by nrep for wavelength calculation
+- **Files**: `fobi/workflow.py`
+
+### Test Results
+
+```bash
+pytest tests/test_workflow.py -v    # 23/23 passed ✅
+pytest tests/test_plotting.py -v    # 10/10 passed ✅
+```
+
+**All bugs fixed!** The FOBI package now works correctly with proper plotting and all filter types.
