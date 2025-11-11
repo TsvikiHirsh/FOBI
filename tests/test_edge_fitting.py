@@ -43,7 +43,7 @@ class TestFindNearest:
         """Test finding nearest value."""
         arr = np.array([1, 3, 5, 7, 9])
         idx = find_nearest(arr, 6.2)
-        assert idx == 2  # Closest to 5
+        assert idx == 3  # Closest to 7 (distance 0.8 vs 1.2 to 5)
 
     def test_find_in_continuous_array(self):
         """Test finding in continuous array."""

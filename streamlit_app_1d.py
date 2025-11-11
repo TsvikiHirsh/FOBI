@@ -107,7 +107,7 @@ def main():
     # Mode selection
     mode = st.sidebar.radio(
         "Data Source",
-        ["Generate Synthetic Data", "Upload CSV Files"],
+        ["Real Iron Powder Example", "Generate Synthetic Data", "Upload CSV Files"],
     )
 
     # ========================================================================
@@ -115,7 +115,80 @@ def main():
     # ========================================================================
     st.header("1️⃣ Data Input")
 
-    if mode == "Generate Synthetic Data":
+    if mode == "Real Iron Powder Example":
+        st.subheader("Real Iron Powder Data")
+
+        st.warning("""
+        **⚠️ Important**: This is **direct time-of-flight data** (not chopper-modulated).
+
+        For direct TOF data, transmission is simply calculated as:
+        **T(λ) = Sample / OpenBeam**
+
+        FOBI reconstruction is **not needed** for this data type.
+        """)
+
+        st.info("""
+        **Real neutron transmission data from iron powder**
+
+        - Measurement: Direct TOF (pulsed source)
+        - Flight path: 9 meters
+        - Time step: 10 µs per stack
+        - Expected Bragg edges: Fe (110) at 2.027 Å, Fe (200) at 2.866 Å, Fe (211) at 4.050 Å
+        """)
+
+        # Check if data files exist
+        iron_file = Path("notebooks/iron_powder.csv")
+        openbeam_file = Path("notebooks/openbeam.csv")
+
+        if iron_file.exists() and openbeam_file.exists():
+            col1, col2 = st.columns(2)
+
+            with col1:
+                wavelength_min = st.number_input("Min wavelength (Å)", 0.5, 10.0, 1.0, 0.5)
+            with col2:
+                wavelength_max = st.number_input("Max wavelength (Å)", 1.0, 15.0, 10.0, 0.5)
+
+            if st.button("📂 Load Real Data (Direct TOF)", type="primary"):
+                with st.spinner("Loading and processing real data..."):
+                    import pandas as pd
+
+                    signal_df = pd.read_csv(iron_file)
+                    openbeam_df = pd.read_csv(openbeam_file)
+
+                    # Calculate time and wavelength
+                    time_step = 10  # µs
+                    L = 9  # meters
+                    stack = signal_df['stack'].values
+                    time_full = stack * time_step
+                    wavelength_full = 3.956 * (time_full / 1000) / L
+
+                    # Filter to desired wavelength range
+                    mask = (wavelength_full >= wavelength_min) & (wavelength_full <= wavelength_max)
+
+                    time = time_full[mask] - time_full[mask].min()  # Reset to start at 0
+                    signal = signal_df['counts'].values[mask]
+                    openbeam = openbeam_df['counts'].values[mask]
+
+                    # Calculate direct transmission for display
+                    direct_trans = signal / openbeam
+
+                    # Store in session state
+                    st.session_state['t'] = time
+                    st.session_state['signal'] = signal
+                    st.session_state['openbeam'] = openbeam
+                    st.session_state['true_trans'] = direct_trans  # Store direct transmission
+                    st.session_state['L'] = L
+                    st.session_state['tmax'] = float(time.max())
+                    st.session_state['nrep'] = 1  # Direct TOF, no repetitions
+                    st.session_state['is_direct_tof'] = True
+
+                    st.success(f"✅ Loaded {len(time)} data points ({wavelength_min}-{wavelength_max} Å)")
+                    st.info("This is direct TOF data. The 'true transmission' shows the simple ratio: Sample/OpenBeam")
+        else:
+            st.warning(f"⚠️ Data files not found:\n- {iron_file}\n- {openbeam_file}")
+            st.info("Please ensure the iron_powder.csv and openbeam.csv files are in the notebooks/ folder.")
+
+    elif mode == "Generate Synthetic Data":
         st.subheader("Synthetic Data Generator")
 
         data_type = st.radio(
