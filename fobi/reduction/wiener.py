@@ -116,8 +116,9 @@ def _create_filter_kernel(
     """
     K = np.zeros(length)
 
+    # Center index
     if length % 2 == 0:
-        x0 = length // 2 + 1
+        x0 = length // 2
     else:
         x0 = length // 2
 
@@ -125,39 +126,51 @@ def _create_filter_kernel(
         # Rectangular window
         ww = 4
         width = round(x0 / ww)
-        K[x0 - round(width/2):x0 + round(width/2)] = 1
+        start = max(0, x0 - round(width/2))
+        end = min(length, x0 + round(width/2))
+        K[start:end] = 1
 
     elif filter_type == "LowPassBu":
         # Butterworth-like filter
         n = 5
         ww = 5
-        width = round(x0 / ww)
-        K[x0] = 1
+        width = max(1, round(x0 / ww))
+
+        if x0 < length:
+            K[x0] = 1
 
         # Right side
-        D = np.arange(1, length - x0 + 1)
-        HH = 1.0 / (1 + (D / width)**(2*n))
-        K[x0+1:] = HH[:len(K[x0+1:])]
+        right_len = length - x0 - 1
+        if right_len > 0:
+            D = np.arange(1, right_len + 1)
+            HH = 1.0 / (1 + (D / width)**(2*n))
+            K[x0+1:x0+1+len(HH)] = HH
 
         # Left side
-        D = np.arange(1, x0)
-        HH = 1.0 / (1 + (D / width)**(2*n))
-        K[:x0] = np.flip(HH)[:len(K[:x0])]
+        if x0 > 0:
+            D = np.arange(1, x0 + 1)
+            HH = 1.0 / (1 + (D / width)**(2*n))
+            K[:x0] = np.flip(HH)
 
     elif filter_type == "LowPassGa":
         # Gaussian filter
-        width = round(x0 / 10)
-        K[x0] = 1
+        width = max(1, round(x0 / 10))
+
+        if x0 < length:
+            K[x0] = 1
 
         # Right side
-        D = np.arange(1, length - x0 + 1)
-        HH = np.exp(-(D**2 / (2 * width**2)))
-        K[x0+1:] = HH[:len(K[x0+1:])]
+        right_len = length - x0 - 1
+        if right_len > 0:
+            D = np.arange(1, right_len + 1)
+            HH = np.exp(-(D**2 / (2 * width**2)))
+            K[x0+1:x0+1+len(HH)] = HH
 
         # Left side
-        D = np.arange(1, x0)
-        HH = np.exp(-(D**2 / (2 * width**2)))
-        K[:x0] = np.flip(HH)[:len(K[:x0])]
+        if x0 > 0:
+            D = np.arange(1, x0 + 1)
+            HH = np.exp(-(D**2 / (2 * width**2)))
+            K[:x0] = np.flip(HH)
 
     return K
 
